@@ -1,0 +1,97 @@
+Dim oFSO As Object
+Dim lResult As Variant
+Dim wsMaster As Worksheet
+Dim strMonth As String
+Dim strYear As String
+Dim strPeriod As String
+Dim strMonths As String
+Dim strFolderName As String
+Dim strSubFolderName As String
+Dim strFolderDirectory As String
+Dim strTemplatesFolderName As String
+Dim strTemplateName As String
+Dim strReportName As String
+Dim intLastRow As Integer
+Dim i As Integer
+
+Sub FolderCreationMonthly()
+
+    Set oFSO = CreateObject("Scripting.FileSystemObject")
+    Set wsMaster = ThisWorkbook.Sheets(Sheet1.Name)
+    
+    strMonth = wsMaster.Range("J4").Value
+    strYear = wsMaster.Range("K4").Value
+    
+    strFolderName = wsMaster.Range("J7").Value & "\" & strMonth & "_" & strYear
+    'strSubFolderName = strFolderName & "\Sent weekly"
+    strFolderDirectory = Dir(strFolderName, vbDirectory)
+    
+    If Not ExistFolders(strFolderDirectory) Then
+        With oFSO
+            .CreateFolder strFolderName
+            '.CreateFolder strSubFolderName
+        End With
+    End If
+                   
+End Sub
+Function ExistFolders(ByVal strFolderDirectory As String) As Boolean
+
+    If strFolderDirectory <> "" Then
+        ExistFolders = True
+    Else
+        ExistFolders = False
+    End If
+
+End Function
+Sub refreshing_RI()
+    Set wsMaster = ThisWorkbook.Sheets(Sheet1.Name)
+    strPeriod = wsMaster.Range("M4").Value
+    strMonths = wsMaster.Range("K6").Value
+    
+    'lResult = Application.Run("SAPExecuteCommand", "ShowPrompts", "DS_1")
+    lResult = Application.Run("SAPExecuteCommand", "Refresh")
+    lResult = Application.Run("SAPSetVariable", "ZXS_0FISCPER_01", strPeriod, "INPUT_STRING", "DS_1")
+    lResult = Application.Run("SAPSetVariable", "ZXS_0FISCPER_01", strPeriod, "INPUT_STRING", "DS_2")
+    
+    'lResult = Application.Run("SAPSetFilter", "DS_1", "0CALMONTH2", strMonths, "INPUT_STRING")
+End Sub
+
+Sub MonthlyPreparation()
+   
+    Application.ScreenUpdating = False
+    
+    Call FolderCreationMonthly
+    
+    Set wsMaster = ThisWorkbook.Sheets(Sheet1.Name)
+    
+    strMonth = wsMaster.Range("J4").Value
+    strYear = wsMaster.Range("K4").Value
+    strFolderName = wsMaster.Range("J7").Value & "\" & strMonth & "_" & strYear
+    'strTemplatesFolderName = wsMaster.Range("J7").Value & "\customer statistics - files"
+    intLastRow = wsMaster.Cells(Rows.Count, 1).End(xlUp).Row
+    
+    For i = 2 To 138  'intLastRow
+    
+        'strTemplateName = wsMaster.Cells(i, 1).Value
+        'strReportName = wsMaster.Cells(i, 2).Value
+        
+        Workbooks.Open FileName:=wsMaster.Cells(i, 7).Value 'strTemplatesFolderName & "\" & strTemplateName
+        
+        With ActiveWorkbook
+            .Activate
+            Call refreshing_RI
+            .RefreshAll
+            .Save
+            .SaveAs FileName:=strFolderName & "\" & wsMaster.Cells(i, 8).Value  'wsMaster.Cells(i, 7).Value 'strFolderName & " \ " & strReportName"
+            .Close
+        End With
+
+    Next i
+    
+    MsgBox "Reports have been prepared!"
+
+    Application.ScreenUpdating = True
+
+End Sub
+
+
