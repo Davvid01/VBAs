@@ -1,0 +1,39 @@
+Sub wysylanieMaila()
+'create variables
+Dim Oapp As Outlook.Application
+Dim Omail As Object
+Dim i As Integer
+Dim Answer As Variant
+'set the variables
+Answer = MsgBox("Do You want to send customer statistics?", vbYesNo)
+
+If Answer = vbYes Then
+
+    Set Oapp = New Outlook.Application 'actuate outlook app
+
+    'the loop
+    For i = 1 To Application.WorksheetFunction.CountA(Sheet1.Range("C2:C138"))
+    Set Omail = Oapp.CreateItem(0) 'tworze pusta wiadomosc-przypisanie aplikacji do Omail
+        With Omail
+            .SentOnBehalfOfName = "gestion.commerciale@rockwool.com"
+            .To = Sheet1.Range("C" & i + 1).Value
+            .CC = Sheet1.Range("D" & i + 1).Value
+            .Subject = Sheet1.Range("E" & i + 1).Value
+            .Body = Sheet1.Range("F" & 2).Value
+            .Attachments.Add Sheet1.Range("G" & i + 1).Value
+            .Display
+            .Send
+            Sheet1.Range("B" & i + 1).Value = Now
+        End With
+    Set Omail = Nothing
+    Next i
+    'memory cleansing
+    Set Oapp = Nothing
+    Set Omail = Nothing
+    MsgBox "Emails have been sent"
+    Else
+        MsgBox "Emails have not been sent"
+End If
+End Sub
+
+
